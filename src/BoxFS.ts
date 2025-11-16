@@ -95,7 +95,7 @@ export class BoxFS {
       // Clean up temp file
       try {
         await fs.unlink(tempPath);
-      } catch (e) {
+      } catch {
         // Ignore cleanup errors
       }
     }
@@ -204,7 +204,7 @@ export class BoxFS {
     // Delete local file after upload
     try {
       await fs.unlink(filePath);
-    } catch (e) {
+    } catch {
       // Ignore if can't delete
     }
 

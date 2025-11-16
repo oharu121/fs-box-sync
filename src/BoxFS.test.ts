@@ -19,56 +19,60 @@ vi.mock('fs/promises', () => ({
 }));
 
 // Mock BoxAPI
-vi.mock('./BoxAPI', () => ({
-  BoxAPI: vi.fn().mockImplementation(() => ({
-    domain: 'app.box.com',
-    listFolderItems: vi.fn(() => Promise.resolve({
-      entries: [
-        { id: 'file-1', name: 'file1.txt', type: 'file' },
-        { id: 'file-2', name: 'file2.pdf', type: 'file' },
-      ],
-    })),
-    getFileInfo: vi.fn(() => Promise.resolve({
-      id: 'file-123',
-      name: 'test.txt',
-      size: 1024,
-      modified_at: '2024-01-01T00:00:00Z',
-    })),
-    getFolderInfo: vi.fn(() => Promise.resolve({
-      id: 'folder-123',
-      name: 'MyFolder',
-    })),
-    getFileContent: vi.fn(() => Promise.resolve('file content')),
-    uploadFile: vi.fn(() => Promise.resolve('uploaded-file-id')),
-    downloadFile: vi.fn(() => Promise.resolve()),
-    deleteFile: vi.fn(() => Promise.resolve()),
-    moveFile: vi.fn(() => Promise.resolve()),
-    createFolder: vi.fn(() => Promise.resolve({ id: 'new-folder-id' })),
-    searchInFolder: vi.fn(() => Promise.resolve({
-      entries: [{ id: 'search-result-id', name: 'found.txt' }],
-    })),
-    getAllWebhooks: vi.fn(() => Promise.resolve({ entries: [] })),
-    createWebhook: vi.fn(() => Promise.resolve({ id: 'webhook-id' })),
-    deleteWebhook: vi.fn(() => Promise.resolve()),
-    downloadFromSharedLink: vi.fn(() => Promise.resolve()),
-    applyConfig: vi.fn(),
-  })),
-}));
+vi.mock('./BoxAPI', () => {
+  return {
+    BoxAPI: class MockBoxAPI {
+      domain = 'app.box.com';
+      listFolderItems = vi.fn(() => Promise.resolve({
+        entries: [
+          { id: 'file-1', name: 'file1.txt', type: 'file' },
+          { id: 'file-2', name: 'file2.pdf', type: 'file' },
+        ],
+      }));
+      getFileInfo = vi.fn(() => Promise.resolve({
+        id: 'file-123',
+        name: 'test.txt',
+        size: 1024,
+        modified_at: '2024-01-01T00:00:00Z',
+      }));
+      getFolderInfo = vi.fn(() => Promise.resolve({
+        id: 'folder-123',
+        name: 'MyFolder',
+      }));
+      getFileContent = vi.fn(() => Promise.resolve('file content'));
+      uploadFile = vi.fn(() => Promise.resolve('uploaded-file-id'));
+      downloadFile = vi.fn(() => Promise.resolve());
+      deleteFile = vi.fn(() => Promise.resolve());
+      moveFile = vi.fn(() => Promise.resolve());
+      createFolder = vi.fn(() => Promise.resolve({ id: 'new-folder-id' }));
+      searchInFolder = vi.fn(() => Promise.resolve({
+        entries: [{ id: 'search-result-id', name: 'found.txt' }],
+      }));
+      getAllWebhooks = vi.fn(() => Promise.resolve({ entries: [] }));
+      createWebhook = vi.fn(() => Promise.resolve({ id: 'webhook-id' }));
+      deleteWebhook = vi.fn(() => Promise.resolve());
+      downloadFromSharedLink = vi.fn(() => Promise.resolve());
+      applyConfig = vi.fn();
+    },
+  };
+});
 
 // Mock BoxDrive
-vi.mock('./BoxDrive', () => ({
-  BoxDrive: vi.fn().mockImplementation(() => ({
-    getBoxDriveRoot: vi.fn(() => '/mock/box/root'),
-    isBoxDriveRunning: vi.fn(() => Promise.resolve(true)),
-    waitForSync: vi.fn(() => Promise.resolve({
-      synced: true,
-      localPath: '/mock/box/root/file.txt',
-    })),
-    isSynced: vi.fn(() => Promise.resolve(true)),
-    getLocalPath: vi.fn(() => Promise.resolve('/mock/box/root/file.txt')),
-    openLocally: vi.fn(() => Promise.resolve()),
-  })),
-}));
+vi.mock('./BoxDrive', () => {
+  return {
+    BoxDrive: class MockBoxDrive {
+      getBoxDriveRoot = vi.fn(() => '/mock/box/root');
+      isBoxDriveRunning = vi.fn(() => Promise.resolve(true));
+      waitForSync = vi.fn(() => Promise.resolve({
+        synced: true,
+        localPath: '/mock/box/root/file.txt',
+      }));
+      isSynced = vi.fn(() => Promise.resolve(true));
+      getLocalPath = vi.fn(() => Promise.resolve('/mock/box/root/file.txt'));
+      openLocally = vi.fn(() => Promise.resolve());
+    },
+  };
+});
 
 describe('BoxFS', () => {
   let boxFS: BoxFS;

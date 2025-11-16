@@ -79,7 +79,7 @@ export class BoxDrive {
         // Linux - just check if directory is accessible
         return fs.existsSync(this.boxDriveRoot);
       }
-    } catch (error) {
+    } catch {
       return false;
     }
   }
@@ -231,7 +231,7 @@ export class BoxDrive {
     const parentDir = path.dirname(localPath);
     try {
       fs.readdirSync(parentDir);
-    } catch (error) {
+    } catch {
       // Parent doesn't exist, can't force sync
     }
 
@@ -246,7 +246,7 @@ export class BoxDrive {
     try {
       const status = await this.waitForSync(id, type, 'poll');
       return status.synced;
-    } catch (error) {
+    } catch {
       return false;
     }
   }

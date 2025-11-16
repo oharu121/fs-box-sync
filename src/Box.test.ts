@@ -3,19 +3,23 @@ import { Box } from './Box';
 import type { BoxConfig } from './types';
 
 // Mock BoxAPI
-vi.mock('./BoxAPI', () => ({
-  BoxAPI: vi.fn().mockImplementation(() => ({
-    domain: 'app.box.com',
-    applyConfig: vi.fn(),
-  })),
-}));
+vi.mock('./BoxAPI', () => {
+  return {
+    BoxAPI: class MockBoxAPI {
+      domain = 'app.box.com';
+      applyConfig = vi.fn();
+    },
+  };
+});
 
 // Mock BoxDrive
-vi.mock('./BoxDrive', () => ({
-  BoxDrive: vi.fn().mockImplementation(() => ({
-    getBoxDriveRoot: vi.fn(() => '/mock/box/root'),
-  })),
-}));
+vi.mock('./BoxDrive', () => {
+  return {
+    BoxDrive: class MockBoxDrive {
+      getBoxDriveRoot = vi.fn(() => '/mock/box/root');
+    },
+  };
+});
 
 // Mock fs/promises
 vi.mock('fs/promises', () => ({

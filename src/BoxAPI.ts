@@ -165,7 +165,7 @@ export class BoxAPI {
 
       console.info(`Credentials loaded from storage: ${this.storagePath}`);
       return true;
-    } catch (error) {
+    } catch {
       return false;
     }
   }
