@@ -549,7 +549,7 @@ export class BoxAPI {
   public async searchInFolder(folderId: string, query: string, type?: string) {
     await this.checkToken();
     const url = `https://api.box.com/2.0/search`;
-    const params: any = {
+    const params: Record<string, string | number> = {
       query: query,
       content_types: 'name',
       folder_ids: folderId,

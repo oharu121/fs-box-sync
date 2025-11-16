@@ -24,9 +24,11 @@ class Box extends BoxFS {
    */
   public configure(config: BoxConfig): void {
     // Apply config to internal API instance
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (this as any).api.applyConfig(config);
 
     // Recreate drive with new config
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (this as any).drive = new BoxDrive((this as any).api, config);
   }
 }

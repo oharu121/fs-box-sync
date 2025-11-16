@@ -1,5 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
+import os from 'os';
 import { BoxAPI } from './BoxAPI';
 import { BoxDrive } from './BoxDrive';
 import { BoxConfig, SyncStrategy } from './types';
@@ -39,7 +40,7 @@ export class BoxFS {
     } else {
       // Read from API
       const items = await this.api.listFolderItems(folderId);
-      return items.entries.map((entry: any) => entry.name);
+      return items.entries.map((entry: { name: string }) => entry.name);
     }
   }
 
@@ -48,7 +49,7 @@ export class BoxFS {
    */
   public async readDirDetailed(folderId: string) {
     const items = await this.api.listFolderItems(folderId);
-    return items.entries.map((entry: any) => ({
+    return items.entries.map((entry: { id: string; name: string; type: string }) => ({
       id: entry.id,
       name: entry.name,
       type: entry.type,
@@ -83,7 +84,7 @@ export class BoxFS {
    */
   public async writeFile(folderId: string, filename: string, content: string): Promise<string> {
     // Create temp file
-    const tempPath = path.join(require('os').tmpdir(), `box-upload-${Date.now()}-${filename}`);
+    const tempPath = path.join(os.tmpdir(), `box-upload-${Date.now()}-${filename}`);
     await fs.writeFile(tempPath, content, 'utf-8');
 
     try {
@@ -143,7 +144,7 @@ export class BoxFS {
    */
   public async findByName(folderId: string, name: string): Promise<string | null> {
     const items = await this.api.listFolderItems(folderId);
-    const entry = items.entries.find((item: any) => item.name.includes(name));
+    const entry = items.entries.find((item: { name: string; id: string }) => item.name.includes(name));
     return entry ? entry.id : null;
   }
 

@@ -31,6 +31,7 @@ describe('Box', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Reset singleton instance for testing
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (Box as any).instance = undefined;
   });
 
@@ -70,7 +71,7 @@ describe('Box', () => {
       const config: BoxConfig = {
         clientId: 'test-client-id',
         clientSecret: 'test-client-secret',
-        tokenProvider: async (callback: string) => {
+        tokenProvider: async () => {
           return 'auth-code';
         },
       };

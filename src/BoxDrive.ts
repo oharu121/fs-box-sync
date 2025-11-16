@@ -93,11 +93,11 @@ export class BoxDrive {
     if (type === 'file') {
       const fileInfo = await this.api.getFileInfo(id);
       const parentPath = fileInfo.path_collection.entries.slice(1); // Remove "All Files"
-      pathParts = [...parentPath.map((entry: any) => entry.name), fileInfo.name];
+      pathParts = [...parentPath.map((entry: { name: string }) => entry.name), fileInfo.name];
     } else {
       const folderInfo = await this.api.getFolderInfo(id);
       const parentPath = folderInfo.path_collection.entries.slice(1); // Remove "All Files"
-      pathParts = [...parentPath.map((entry: any) => entry.name), folderInfo.name];
+      pathParts = [...parentPath.map((entry: { name: string }) => entry.name), folderInfo.name];
     }
 
     return path.join(this.boxDriveRoot, ...pathParts);
@@ -141,8 +141,8 @@ export class BoxDrive {
           lastModified: stats.mtime,
           size: stats.size,
         };
-      } catch (error: any) {
-        if (error.code !== 'ENOENT') {
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
           console.warn(`Error checking path ${localPath}:`, error);
         }
       }
@@ -196,8 +196,8 @@ export class BoxDrive {
             size: stats.size,
           };
         }
-      } catch (error: any) {
-        if (error.code !== 'ENOENT') {
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
           console.warn(`Error checking path ${localPath}:`, error);
         }
       }

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
 // Mock fs/promises before importing modules
 vi.mock('fs/promises', () => ({
