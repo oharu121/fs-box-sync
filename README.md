@@ -113,8 +113,8 @@ interface BoxConfig {
   // Linux: ~/Box
 
   // === Box Domain ===
-  domain?: string;  // Default: 'app.box.com' (use 'rak.app.box.com' for enterprise)
-
+  domain?: string;  // Default: 'app.box.com'
+  
   // === Sync Settings ===
   syncTimeout?: number;  // Default: 30000 (30 seconds)
   syncInterval?: number;  // Default: 1000 (1 second)

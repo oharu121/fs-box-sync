@@ -114,10 +114,10 @@ describe('BoxAPI', () => {
     it('should use custom domain if provided', () => {
       const customConfig: BoxConfig = {
         ...config,
-        domain: 'rak.app.box.com',
+        domain: 'foo.app.box.com',
       };
       const api = new BoxAPI(customConfig);
-      expect(api.domain).toBe('rak.app.box.com');
+      expect(api.domain).toBe('foo.app.box.com');
     });
 
     it('should accept empty config', () => {

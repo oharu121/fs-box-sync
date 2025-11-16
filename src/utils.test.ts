@@ -37,8 +37,10 @@ describe('getBoxOfficeOnlineUrl', () => {
   });
 
   it('should generate Office Online URL with custom domain', () => {
-    const url = getBoxOfficeOnlineUrl('123456', 'rak.app.box.com');
-    expect(url).toBe('https://rak.app.box.com/integrations/officeonline/openOfficeOnline?fileId=123456&sharedAccessCode=');
+    const url = getBoxOfficeOnlineUrl('123456', 'foo.app.box.com');
+    expect(url).toBe(
+      'https://foo.app.box.com/integrations/officeonline/openOfficeOnline?fileId=123456&sharedAccessCode='
+    );
   });
 });
 

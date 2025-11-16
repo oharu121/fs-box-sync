@@ -75,7 +75,7 @@ export function formatDateFolders(
  * Creates a URL to open files in Box Office Online (editable mode)
  *
  * @param fileId - Box file ID
- * @param domain - Box domain (e.g., 'app.box.com', 'rak.app.box.com')
+ * @param domain - Box domain (e.g., 'app.box.com', 'foo.app.box.com')
  * @returns Office Online URL
  *
  * @example

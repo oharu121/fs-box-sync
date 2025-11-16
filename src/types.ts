@@ -25,7 +25,7 @@ export interface BoxConfig {
   boxDriveRoot?: string;
 
   // === Box Domain Configuration ===
-  // Box domain for Office Online URLs (e.g., 'rak.app.box.com', 'app.box.com')
+  // Box domain for Office Online URLs (e.g., 'foo.app.box.com', 'app.box.com')
   // Default: 'app.box.com'
   domain?: string;
 
