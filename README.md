@@ -58,7 +58,7 @@ npm install fs-box-sync
 
 ```typescript
 import box from 'fs-box-sync';
-import Playwright from 'bss-automation';
+import Playwright from 'auth-provider';
 
 // Configure once at app startup
 box.configure({
@@ -114,7 +114,7 @@ interface BoxConfig {
 
   // === Box Domain ===
   domain?: string;  // Default: 'app.box.com'
-  
+
   // === Sync Settings ===
   syncTimeout?: number;  // Default: 30000 (30 seconds)
   syncInterval?: number;  // Default: 1000 (1 second)
