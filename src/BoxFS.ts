@@ -65,6 +65,15 @@ export class BoxFS {
   }
 
   /**
+   * Read file contents from Box Cloud
+   * @param fileId - Box file ID
+   */
+  public async getFileContent(fileId: string): Promise<string> {
+    const content = await this.api.getFileContent(fileId);
+    return content || '';
+  }
+
+  /**
    * Write file contents by ID (upload via API)
    * Note: Box API doesn't support in-place editing, so we upload to temp location first
    */
