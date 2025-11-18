@@ -376,7 +376,7 @@ await box.waitForSync('file-id', 'file', 'force');
 #### Filesystem Operations
 
 - `readDir(folderId)` - Read directory contents (always synced locally)
-- `readDirDetailed(folderId)` - Read with IDs and types (from cloud API)
+- `listFolderItems(folderId)` - Read with IDs and types (from cloud API)
 - `readFile(fileId)` - Read file content (always synced locally)
 - `writeFile(folderId, filename, content)` - Write file
 - `deleteFile(fileId)` - Delete file

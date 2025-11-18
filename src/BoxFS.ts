@@ -40,7 +40,7 @@ export class BoxFS {
   /**
    * Read directory contents (detailed, with IDs)
    */
-  public async readDirDetailed(folderId: string) {
+  public async listFolderItems(folderId: string) {
     const items = await this.api.listFolderItems(folderId);
     return items.entries.map((entry: { id: string; name: string; type: string }) => ({
       id: entry.id,
@@ -211,10 +211,7 @@ export class BoxFS {
    * // Uploads to: folderId/2024年/3月/file.pdf
    * await boxFS.uploadWithYearMonthFolders('123', './file.pdf')
    */
-  public async uploadWithYearMonthFolders(
-    folderId: string,
-    filePath: string
-  ): Promise<string> {
+  public async uploadWithYearMonthFolders(folderId: string, filePath: string): Promise<string> {
     const date = new Date();
     const { year, month } = formatDateFolders(date, this.api.locale);
 

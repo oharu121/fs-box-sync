@@ -119,9 +119,9 @@ describe('BoxFS', () => {
     });
   });
 
-  describe('readDirDetailed', () => {
+  describe('listFolderItems', () => {
     it('should return detailed folder contents', async () => {
-      const items = await boxFS.readDirDetailed('folder-123');
+      const items = await boxFS.listFolderItems('folder-123');
       expect(items).toHaveLength(2);
       expect(items[0]).toHaveProperty('id');
       expect(items[0]).toHaveProperty('name');
@@ -187,10 +187,7 @@ describe('BoxFS', () => {
 
   describe('uploadWithYearMonthFolders', () => {
     it('should upload file to date-based folder structure', async () => {
-      const fileId = await boxFS.uploadWithYearMonthFolders(
-        'folder-123',
-        '/path/to/file.pdf'
-      );
+      const fileId = await boxFS.uploadWithYearMonthFolders('folder-123', '/path/to/file.pdf');
       expect(fileId).toBe('uploaded-file-id');
     });
 
