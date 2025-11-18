@@ -1,6 +1,6 @@
 {
   "name": "fs-box-sync",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "TypeScript SDK for Box API with seamless Box Drive integration - manage files, folders, webhooks, and sync between cloud and local filesystem",
   "type": "module",
   "main": "./index.js",
