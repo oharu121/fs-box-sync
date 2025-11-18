@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0]
+
+### Breaking Changes
+- **`readDir()` and `readFile()` now always sync locally**
+  - Removed `ensureSync` parameter - these methods always wait for Box Drive sync
+  - Methods now consistently read from local filesystem only
+  - For cloud-only operations, use `api.listFolderItems()` or `api.getFileContent()` directly
+  - Rationale: Method names imply local operations, so sync should be guaranteed
+
+### Added
+- **`getLocalPathSynced(id, type, strategy?)`** - Get local path with guaranteed sync
+  - Returns path only after confirming file/folder exists locally
+  - Accepts optional sync strategy parameter
+  - Complements existing `getLocalPath()` which is fast but doesn't guarantee existence
+
+- **`existsByNameAndSynced(parentId, name, type)`** - Check existence by name
+  - Combines name lookup with sync verification
+  - Returns `true` only if item exists in cloud AND is synced locally
+  - Useful for workflows that need to verify items by name before processing
+
+### Changed
+- **`readDir(folderId)`** signature simplified
+  - Before: `readDir(folderId, ensureSync?: boolean)`
+  - After: `readDir(folderId)`
+  - Always reads from synced local filesystem
+
+- **`readFile(fileId)`** signature simplified
+  - Before: `readFile(fileId, ensureSync?: boolean)`
+  - After: `readFile(fileId)`
+  - Always reads from synced local filesystem
+
 ## [1.1.0]
 
 ### Added

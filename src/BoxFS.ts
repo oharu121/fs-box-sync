@@ -22,26 +22,19 @@ export class BoxFS {
   // ========== FILESYSTEM-LIKE OPERATIONS (ID-based) ==========
 
   /**
-   * Read directory contents (with optional sync verification)
+   * Read directory contents from local Box Drive (waits for sync)
    * @param folderId - Box folder ID
-   * @param ensureSync - Wait for Box Drive sync before reading
    */
-  public async readDir(folderId: string, ensureSync: boolean = false): Promise<string[]> {
-    if (ensureSync) {
-      const syncStatus = await this.drive.waitForSync(folderId, 'folder');
-      if (!syncStatus.synced) {
-        throw new Error(`Folder ${folderId} is not synced: ${syncStatus.error}`);
-      }
-
-      // Read from local filesystem
-      const localPath = syncStatus.localPath!;
-      const entries = await fs.readdir(localPath);
-      return entries;
-    } else {
-      // Read from API
-      const items = await this.api.listFolderItems(folderId);
-      return items.entries.map((entry: { name: string }) => entry.name);
+  public async readDir(folderId: string): Promise<string[]> {
+    const syncStatus = await this.drive.waitForSync(folderId, 'folder');
+    if (!syncStatus.synced) {
+      throw new Error(`Folder ${folderId} is not synced: ${syncStatus.error}`);
     }
+
+    // Read from local filesystem
+    const localPath = syncStatus.localPath!;
+    const entries = await fs.readdir(localPath);
+    return entries;
   }
 
   /**
@@ -57,25 +50,18 @@ export class BoxFS {
   }
 
   /**
-   * Read file contents by ID (with optional sync)
+   * Read file contents from local Box Drive (waits for sync)
    * @param fileId - Box file ID
-   * @param ensureSync - Wait for Box Drive sync and read from local filesystem
    */
-  public async readFile(fileId: string, ensureSync: boolean = false): Promise<string> {
-    if (ensureSync) {
-      const syncStatus = await this.drive.waitForSync(fileId, 'file');
-      if (!syncStatus.synced) {
-        throw new Error(`File ${fileId} is not synced: ${syncStatus.error}`);
-      }
-
-      // Read from local filesystem
-      const localPath = syncStatus.localPath!;
-      return await fs.readFile(localPath, 'utf-8');
-    } else {
-      // Read from API
-      const content = await this.api.getFileContent(fileId);
-      return content || '';
+  public async readFile(fileId: string): Promise<string> {
+    const syncStatus = await this.drive.waitForSync(fileId, 'file');
+    if (!syncStatus.synced) {
+      throw new Error(`File ${fileId} is not synced: ${syncStatus.error}`);
     }
+
+    // Read from local filesystem
+    const localPath = syncStatus.localPath!;
+    return await fs.readFile(localPath, 'utf-8');
   }
 
   /**
@@ -116,10 +102,47 @@ export class BoxFS {
   }
 
   /**
+   * Check if a file/folder exists by name and is synced to Box Drive
+   * @param parentFolderId - Parent folder ID to search in
+   * @param name - Name of the file/folder to find
+   * @param type - Type of item ('file' or 'folder')
+   * @returns true if found in cloud AND synced locally
+   */
+  public async existsByNameAndSynced(
+    parentFolderId: string,
+    name: string,
+    type: 'file' | 'folder'
+  ): Promise<boolean> {
+    const id = await this.findByName(parentFolderId, name);
+    if (!id) return false;
+
+    return await this.existsAndSynced(id, type);
+  }
+
+  /**
    * Get local Box Drive path for a Box file/folder
    */
   public async getLocalPath(id: string, type: 'file' | 'folder'): Promise<string> {
     return await this.drive.getLocalPath(id, type);
+  }
+
+  /**
+   * Get local Box Drive path and ensure it's synced
+   * @param id - Box file/folder ID
+   * @param type - Type of item
+   * @param strategy - Sync strategy (default: 'smart')
+   * @returns Local filesystem path (guaranteed to exist)
+   */
+  public async getLocalPathSynced(
+    id: string,
+    type: 'file' | 'folder',
+    strategy?: SyncStrategy
+  ): Promise<string> {
+    const syncStatus = await this.drive.waitForSync(id, type, strategy);
+    if (!syncStatus.synced) {
+      throw new Error(`Cannot get local path: ${syncStatus.error}`);
+    }
+    return syncStatus.localPath!;
   }
 
   /**

@@ -143,10 +143,7 @@ export class BoxAPI {
 
       const dir = path.dirname(this.storagePath);
       await fsPromises.mkdir(dir, { recursive: true });
-
       await fsPromises.writeFile(this.storagePath, JSON.stringify(credentials, null, 2), 'utf-8');
-
-      console.info(`Credentials saved to ${this.storagePath}`);
     } catch (error) {
       console.error('Failed to save credentials to storage:', error);
     }
@@ -167,7 +164,6 @@ export class BoxAPI {
 
       this.updateStoragePath();
 
-      console.info(`Credentials loaded from storage: ${this.storagePath}`);
       return true;
     } catch {
       return false;

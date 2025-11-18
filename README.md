@@ -148,7 +148,7 @@ import box from './boxClient';
 
 // Works indefinitely - auto re-authenticates when needed
 await box.uploadFile('folder-id', './file.pdf');
-await box.readDir('folder-id', true);
+await box.readDir('folder-id'); // Always reads from synced local filesystem
 ```
 
 **Characteristics:**
@@ -242,7 +242,7 @@ async function uploadReport() {
 }
 
 async function listFiles() {
-  const files = await box.readDir('folder-id', true);
+  const files = await box.readDir('folder-id');
   return files;
 }
 ```
@@ -360,14 +360,16 @@ await box.waitForSync('file-id', 'file', 'force');
 ### BoxFS API (High-level)
 
 #### Filesystem Operations
-- `readDir(folderId, ensureSync?)` - Read directory contents
-- `readDirDetailed(folderId)` - Read with IDs and types
-- `readFile(fileId, ensureSync?)` - Read file content
+- `readDir(folderId)` - Read directory contents (always synced locally)
+- `readDirDetailed(folderId)` - Read with IDs and types (from cloud API)
+- `readFile(fileId)` - Read file content (always synced locally)
 - `writeFile(folderId, filename, content)` - Write file
 - `deleteFile(fileId)` - Delete file
-- `getLocalPath(id, type)` - Get Box Drive path
+- `getLocalPath(id, type)` - Get Box Drive path (fast, may not exist)
+- `getLocalPathSynced(id, type, strategy?)` - Get Box Drive path (guaranteed to exist)
 - `openLocally(id, type)` - Open in Box Drive
-- `existsAndSynced(id, type)` - Check sync status
+- `existsAndSynced(id, type)` - Check if ID exists and is synced
+- `existsByNameAndSynced(parentId, name, type)` - Check if named item exists and is synced
 
 #### Search & Find
 - `findByName(folderId, name)` - Find by partial name
