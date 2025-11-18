@@ -69,6 +69,7 @@
   },
   "homepage": "https://github.com/oharu121/fs-box-sync#readme",
   "dependencies": {
-    "axios-fluent": "^2.1.1"
+    "axios-fluent": "^2.1.1",
+    "dayjs": "^1.11.19"
   }
 }

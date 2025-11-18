@@ -125,7 +125,7 @@ describe('Box', () => {
       expect(instance.uploadFile).toBeDefined();
       expect(instance.downloadFile).toBeDefined();
       expect(instance.deleteFile).toBeDefined();
-      expect(instance.uploadWithDateFolders).toBeDefined();
+      expect(instance.uploadWithYearMonthFolders).toBeDefined();
       expect(instance.getOfficeOnlineUrl).toBeDefined();
     });
 

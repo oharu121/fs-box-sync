@@ -167,7 +167,9 @@ export class BoxFS {
    */
   public async findByName(folderId: string, name: string): Promise<string | null> {
     const items = await this.api.listFolderItems(folderId);
-    const entry = items.entries.find((item: { name: string; id: string }) => item.name.includes(name));
+    const entry = items.entries.find((item: { name: string; id: string }) =>
+      item.name.includes(name)
+    );
     return entry ? entry.id : null;
   }
 
@@ -204,12 +206,12 @@ export class BoxFS {
    *
    * @example
    * // Uploads to: folderId/2024/March/file.pdf
-   * await boxFS.uploadWithDateFolders('123', './file.pdf')
+   * await boxFS.uploadWithYearMonthFolders('123', './file.pdf')
    *
    * // With Japanese locale: folderId/2024年/3月/file.pdf
-   * await boxFS.uploadWithDateFolders('123', './file.pdf', 'ja-JP')
+   * await boxFS.uploadWithYearMonthFolders('123', './file.pdf', 'ja-JP')
    */
-  public async uploadWithDateFolders(
+  public async uploadWithYearMonthFolders(
     folderId: string,
     filePath: string,
     locale: string = 'en-US'

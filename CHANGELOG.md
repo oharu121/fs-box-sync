@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.0]
 
 ### Breaking Changes
+
 - **`readDir()` and `readFile()` now always sync locally**
   - Removed `ensureSync` parameter - these methods always wait for Box Drive sync
   - Methods now consistently read from local filesystem only
@@ -15,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Rationale: Method names imply local operations, so sync should be guaranteed
 
 ### Added
+
 - **`getLocalPathSynced(id, type, strategy?)`** - Get local path with guaranteed sync
   - Returns path only after confirming file/folder exists locally
   - Accepts optional sync strategy parameter
@@ -26,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Useful for workflows that need to verify items by name before processing
 
 ### Changed
+
 - **`readDir(folderId)`** signature simplified
   - Before: `readDir(folderId, ensureSync?: boolean)`
   - After: `readDir(folderId)`
@@ -39,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.0]
 
 ### Added
+
 - **Access Token Support (Tier 1)**: Quick testing mode with developer tokens
   - New `accessToken` option in `BoxConfig` for immediate API access
   - Perfect for learning, POC, and experiments (~1 hour validity)
@@ -63,19 +67,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Shows benefits: single source of truth, type safety, easy testing
 
 ### Fixed
+
 - **CRITICAL: Token Storage Race Condition**
   - Provider was incorrectly called even when valid tokens existed in storage
   - `loadFromStorage()` now properly awaited before token checks
   - Prevents unnecessary OAuth flows and token invalidation on startup
   - Fixes issue where "First attempt getting box code" logged before "Credentials loaded from storage"
 
-- **uploadWithDateFolders API Signature**
+- **uploadWithYearMonthFolders API Signature**
   - Removed unnecessary `date` parameter (always uses current date)
   - Updated from `(folderId, filePath, date?, locale?)` to `(folderId, filePath, locale?)`
   - Fixed JSDoc mismatch (was showing 3 params but had 4)
   - Updated all tests and documentation
 
 ### Changed
+
 - **Improved TypeScript Error Handling**
   - Replaced duck-typed `error?.response?.status` with proper `instanceof AxiosError`
   - Better type safety and IDE autocomplete
@@ -96,6 +102,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Upload sessions: `createUploadSession`, `commitSession`, `normalUpload`
 
 ### Technical Improvements
+
 - Added `storageLoadPromise` to track token storage loading state
 - Added `isRetrying` flag to prevent infinite retry loops
 - Error enhancement with context-aware messages
@@ -104,6 +111,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2025-11-16
 
 ### Added
+
 - Initial release with 3-layer architecture
 - BoxAPI (raw API) → BoxDrive (sync bridge) → BoxFS (fs-like interface)
 - Token provider pattern for OAuth automation
@@ -114,9 +122,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Webhooks, shared links, and Office Online integration
 
 ### Features
+
 - **BoxFS API**: High-level filesystem-like operations
   - `readDir`, `readFile`, `writeFile`, `deleteFile`
-  - `uploadFile`, `downloadFile`, `uploadWithDateFolders`
+  - `uploadFile`, `downloadFile`, `uploadWithYearMonthFolders`
   - `findByName`, `search`, `createFolderIfNotExists`
   - `getOfficeOnlineUrl`, `openLocally`
 
@@ -132,6 +141,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Shared links: download from shared links
 
 ### Cross-Platform
+
 - Windows: `C:\Users\{user}\AppData\Local\fs-box-sync\tokens.json`
 - Mac: `~/.config/fs-box-sync/tokens.json`
 - Linux: `~/.config/fs-box-sync/tokens.json`

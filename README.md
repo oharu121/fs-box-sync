@@ -29,7 +29,7 @@ Toolkit for Box REST API with automatic token management, OAuth automation suppo
 │   BoxFS (High-level API)            │  ← Recommended
 │  - readDir(id, ensureSync)          │
 │  - readFile(id, ensureSync)         │
-│  - uploadWithDateFolders()          │
+│  - uploadWithYearMonthFolders()          │
 └──────────────┬──────────────────────┘
                │
 ┌──────────────▼──────────────────────┐
@@ -67,7 +67,7 @@ import { BoxAPI } from 'fs-box-sync';
 
 // Just paste the developer token - works immediately!
 const api = new BoxAPI({
-  accessToken: 'your-developer-token-from-console'
+  accessToken: 'your-developer-token-from-console',
 });
 
 // Use right away - perfect for testing
@@ -76,6 +76,7 @@ await api.uploadFile('folder-id', './test.pdf');
 ```
 
 **Characteristics:**
+
 - ✅ **Zero setup** - paste token and go
 - ✅ **No OAuth flow** required
 - ✅ **Perfect for learning** Box API
@@ -96,15 +97,16 @@ import box from 'fs-box-sync';
 box.configure({
   clientId: process.env.BOX_CLIENT_ID,
   clientSecret: process.env.BOX_CLIENT_SECRET,
-  refreshToken: 'your-refresh-token' // From initial OAuth flow
+  refreshToken: 'your-refresh-token', // From initial OAuth flow
 });
 
 // Auto-refreshes access tokens for ~60 days
 await box.uploadFile('folder-id', './file.pdf');
-await box.uploadWithDateFolders('folder-id', './file.pdf', 'ja-JP');
+await box.uploadWithYearMonthFolders('folder-id', './file.pdf', 'ja-JP');
 ```
 
 **Characteristics:**
+
 - ✅ **Auto-refreshes** access tokens
 - ✅ **Works for ~60 days**
 - ✅ **Tokens persist** to disk automatically
@@ -113,6 +115,7 @@ await box.uploadWithDateFolders('folder-id', './file.pdf', 'ja-JP');
 - ⚠️ Needs **re-auth every ~60 days**
 
 **Storage locations:**
+
 - Windows: `C:\Users\{user}\AppData\Local\fs-box-sync\tokens.json`
 - Mac/Linux: `~/.config/fs-box-sync\tokens.json`
 
@@ -126,9 +129,9 @@ await box.uploadWithDateFolders('folder-id', './file.pdf', 'ja-JP');
 
 ```typescript
 // boxClient.ts - Create a wrapper module
-import credentials from "@constants/credentials";
-import box from "fs-box-sync";
-import Playwright from "./Playwright";
+import credentials from '@constants/credentials';
+import box from 'fs-box-sync';
+import Playwright from './Playwright';
 
 box.configure({
   clientId: credentials.BOX_CLIENT_ID,
@@ -136,13 +139,14 @@ box.configure({
   tokenProvider: async (authUrl) => {
     // Fully automate OAuth - no manual intervention needed
     return await Playwright.getBoxCode(authUrl);
-  }
+  },
 });
 
 export default box;
 ```
 
 Then use anywhere in your app:
+
 ```typescript
 import box from './boxClient';
 
@@ -152,6 +156,7 @@ await box.readDir('folder-id'); // Always reads from synced local filesystem
 ```
 
 **Characteristics:**
+
 - ✅ **Works indefinitely** - never expires
 - ✅ **Zero manual intervention** after setup
 - ✅ **Perfect for unattended** automation
@@ -162,32 +167,35 @@ await box.readDir('folder-id'); // Always reads from synced local filesystem
 
 ### Comparison Table
 
-| Feature | Tier 1: Testing | Tier 2: Production | Tier 3: Enterprise |
-|---------|----------------|-------------------|-------------------|
-| **Setup Complexity** | Minimal (copy/paste) | Low | Medium |
-| **Duration** | ~1 hour | ~60 days | Indefinite |
-| **Auto-Refresh** | ❌ No | ✅ Yes | ✅ Yes |
-| **Manual Work** | Regenerate hourly | Re-auth every 60 days | None |
-| **Best For** | Testing, Learning | Automation Scripts | Production Services |
-| **OAuth Required** | ❌ No | ✅ Initial only | ✅ Fully automated |
+| Feature              | Tier 1: Testing      | Tier 2: Production    | Tier 3: Enterprise  |
+| -------------------- | -------------------- | --------------------- | ------------------- |
+| **Setup Complexity** | Minimal (copy/paste) | Low                   | Medium              |
+| **Duration**         | ~1 hour              | ~60 days              | Indefinite          |
+| **Auto-Refresh**     | ❌ No                | ✅ Yes                | ✅ Yes              |
+| **Manual Work**      | Regenerate hourly    | Re-auth every 60 days | None                |
+| **Best For**         | Testing, Learning    | Automation Scripts    | Production Services |
+| **OAuth Required**   | ❌ No                | ✅ Initial only       | ✅ Fully automated  |
 
 ---
 
 ### Quick Decision Guide
 
 **Choose Tier 1 if you want to:**
+
 - 🧪 Test Box API quickly
 - 📚 Learn how the API works
 - ⚡ Get started in 30 seconds
 - 🔬 Experiment with features
 
 **Choose Tier 2 if you have:**
+
 - 🤖 Automated workflows
 - ⏰ Scheduled tasks (cron jobs)
 - 📊 Scripts that run periodically
 - ✅ OK with re-auth every ~60 days
 
 **Choose Tier 3 if you need:**
+
 - 🏢 Production-grade automation
 - 🔄 Services that run 24/7
 - 🚫 Zero manual intervention
@@ -213,9 +221,9 @@ For **any production application**, we recommend creating a wrapper module that 
 
 ```typescript
 // src/lib/boxClient.ts
-import credentials from "@constants/credentials";
-import box from "fs-box-sync";
-import Playwright from "./Playwright";
+import credentials from '@constants/credentials';
+import box from 'fs-box-sync';
+import Playwright from './Playwright';
 
 // Configure once
 box.configure({
@@ -223,7 +231,7 @@ box.configure({
   clientSecret: credentials.BOX_CLIENT_SECRET,
   tokenProvider: async (authUrl) => {
     return await Playwright.getBoxCode(authUrl);
-  }
+  },
 });
 
 // Export the pre-configured singleton
@@ -252,18 +260,20 @@ async function listFiles() {
 This pattern works for **all tiers**:
 
 **Tier 1 (Testing):**
+
 ```typescript
 // boxClient.ts
 import { BoxAPI } from 'fs-box-sync';
 
 const api = new BoxAPI({
-  accessToken: process.env.BOX_ACCESS_TOKEN
+  accessToken: process.env.BOX_ACCESS_TOKEN,
 });
 
 export default api;
 ```
 
 **Tier 2 (Production):**
+
 ```typescript
 // boxClient.ts
 import box from 'fs-box-sync';
@@ -271,13 +281,14 @@ import box from 'fs-box-sync';
 box.configure({
   clientId: process.env.BOX_CLIENT_ID,
   clientSecret: process.env.BOX_CLIENT_SECRET,
-  refreshToken: process.env.BOX_REFRESH_TOKEN
+  refreshToken: process.env.BOX_REFRESH_TOKEN,
 });
 
 export default box;
 ```
 
 **Tier 3 (Enterprise):**
+
 ```typescript
 // boxClient.ts
 import box from 'fs-box-sync';
@@ -288,7 +299,7 @@ box.configure({
   clientSecret: process.env.BOX_CLIENT_SECRET,
   tokenProvider: async (authUrl) => {
     return await Playwright.getBoxCode(authUrl);
-  }
+  },
 });
 
 export default box;
@@ -311,25 +322,25 @@ The wrapper module pattern simply **organizes** the singleton configuration - it
 ```typescript
 interface BoxConfig {
   // === Authentication ===
-  accessToken?: string;  // For quick testing (Tier 1)
-  tokenProvider?: (callback: string) => Promise<string> | string;  // For automation (Tier 3)
-  refreshToken?: string;  // For production (Tier 2)
+  accessToken?: string; // For quick testing (Tier 1)
+  tokenProvider?: (callback: string) => Promise<string> | string; // For automation (Tier 3)
+  refreshToken?: string; // For production (Tier 2)
   clientId?: string;
   clientSecret?: string;
-  redirectUri?: string;  // Default: 'https://oauth.pstmn.io/v1/callback'
+  redirectUri?: string; // Default: 'https://oauth.pstmn.io/v1/callback'
 
   // === Box Drive ===
-  boxDriveRoot?: string;  // Auto-detected if not provided
+  boxDriveRoot?: string; // Auto-detected if not provided
   // Windows: C:/Users/{username}/Box
   // Mac: ~/Library/CloudStorage/Box-Box
   // Linux: ~/Box
 
   // === Box Domain ===
-  domain?: string;  // Default: 'app.box.com'
+  domain?: string; // Default: 'app.box.com'
 
   // === Sync Settings ===
-  syncTimeout?: number;  // Default: 30000 (30 seconds)
-  syncInterval?: number;  // Default: 1000 (1 second)
+  syncTimeout?: number; // Default: 30000 (30 seconds)
+  syncInterval?: number; // Default: 1000 (1 second)
 }
 ```
 
@@ -338,18 +349,21 @@ interface BoxConfig {
 BoxDrive supports 3 sync strategies:
 
 ### `poll` - Simple existence check
+
 ```typescript
 // Just checks if file exists locally (fastest, least reliable)
 await box.waitForSync('file-id', 'file', 'poll');
 ```
 
 ### `smart` - Size & modification verification (default)
+
 ```typescript
 // Verifies file size matches cloud (recommended)
 await box.waitForSync('file-id', 'file', 'smart');
 ```
 
 ### `force` - Try to trigger sync
+
 ```typescript
 // Attempts to force Box Drive sync (limited capabilities)
 await box.waitForSync('file-id', 'file', 'force');
@@ -360,6 +374,7 @@ await box.waitForSync('file-id', 'file', 'force');
 ### BoxFS API (High-level)
 
 #### Filesystem Operations
+
 - `readDir(folderId)` - Read directory contents (always synced locally)
 - `readDirDetailed(folderId)` - Read with IDs and types (from cloud API)
 - `readFile(fileId)` - Read file content (always synced locally)
@@ -372,37 +387,44 @@ await box.waitForSync('file-id', 'file', 'force');
 - `existsByNameAndSynced(parentId, name, type)` - Check if named item exists and is synced
 
 #### Search & Find
+
 - `findByName(folderId, name)` - Find by partial name
 - `search(folderId, query, type?)` - Search in folder
 
 #### Upload & Download
+
 - `uploadFile(folderId, filePath)` - Upload file
 - `downloadFile(fileId, destPath)` - Download file
-- `uploadWithDateFolders(folderId, filePath, locale?)` - Upload with date structure (default locale: 'en-US')
+- `uploadWithYearMonthFolders(folderId, filePath, locale?)` - Upload with date structure (default locale: 'en-US')
 - `moveFile(fileId, toFolderId)` - Move file
 
 #### Folder Operations
+
 - `createFolderIfNotExists(parentId, name)` - Create if needed
 - `getFileInfo(fileId)` - Get metadata
 - `getFolderInfo(folderId)` - Get metadata
 
 #### Box Drive
+
 - `isBoxDriveRunning()` - Check if Box Drive is running
 - `waitForSync(id, type, strategy?)` - Wait for sync
 - `getBoxDriveRoot()` - Get Box Drive root path
 
 #### Webhooks
+
 - `getAllWebhooks()` - List webhooks
 - `createWebhook(folderId, address)` - Create webhook
 - `deleteWebhook(webhookId)` - Delete webhook
 
 #### Utilities
+
 - `getOfficeOnlineUrl(fileId)` - Get Office Online URL
 - `getOfficeOnlineUrlByName(folderId, fileName)` - Get by search
 
 ### BoxAPI API (Low-level)
 
 All pure Box REST API operations without Box Drive integration:
+
 - `getFileInfo(fileId)`, `getFolderInfo(folderId)`
 - `listFolderItems(folderId)`
 - `uploadFile(folderId, filePath)` - With auto-chunking >20MB

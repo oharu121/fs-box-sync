@@ -1,4 +1,5 @@
 import path from 'path';
+import dayjs from 'dayjs';
 
 /**
  * Utility functions for fs-box-sync
@@ -9,8 +10,8 @@ import path from 'path';
  *
  * @param date - Date to format
  * @param locale - Locale (e.g., 'en-US', 'ja-JP')
- * @param yearFormat - Custom year format
- * @param monthFormat - Custom month format
+ * @param yearFormat - Custom year format (dayjs format string)
+ * @param monthFormat - Custom month format (dayjs format string)
  * @returns Object with year and month folder names
  *
  * @example
@@ -32,40 +33,27 @@ export function formatDateFolders(
   yearFormat?: string,
   monthFormat?: string
 ): { year: string; month: string } {
+  const d = dayjs(date);
+
   // If custom formats provided, use them
   if (yearFormat || monthFormat) {
-    const year = yearFormat || 'YYYY';
-    const month = monthFormat || 'M';
-
     return {
-      year: year.replace('YYYY', date.getFullYear().toString()),
-      month: month.replace('MM', String(date.getMonth() + 1).padStart(2, '0'))
-                  .replace('M', String(date.getMonth() + 1)),
+      year: d.format(yearFormat || 'YYYY'),
+      month: d.format(monthFormat || 'M'),
     };
   }
 
   // Locale-based formatting
-  if (locale.startsWith('ja')) {
-    // Japanese: 2024年, 3月
+  if (locale.startsWith('ja') || locale.startsWith('zh')) {
     return {
-      year: `${date.getFullYear()}年`,
-      month: `${date.getMonth() + 1}月`,
-    };
-  } else if (locale.startsWith('zh')) {
-    // Chinese: 2024年, 3月
-    return {
-      year: `${date.getFullYear()}年`,
-      month: `${date.getMonth() + 1}月`,
+      year: `${d.year()}年`,
+      month: `${d.month() + 1}月`,
     };
   } else {
     // English and others: 2024, March
-    const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
     return {
-      year: date.getFullYear().toString(),
-      month: monthNames[date.getMonth()],
+      year: d.format('YYYY'),
+      month: d.format('MMMM'),
     };
   }
 }
