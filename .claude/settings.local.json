@@ -1,9 +1,7 @@
 {
   "permissions": {
-    "allow": [
-      "Bash(npm run typecheck:*)"
-    ],
-    "deny": [],
+    "allow": ["Bash(npm run typecheck:*)", "Bash(npm run build:*)"],
+    "deny": ["Bash(npm test:*)"],
     "ask": []
   }
 }

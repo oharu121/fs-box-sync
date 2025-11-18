@@ -187,13 +187,12 @@ describe('BoxFS', () => {
       const fileId = await boxFS.uploadWithDateFolders(
         'folder-123',
         '/path/to/file.pdf',
-        new Date('2024-03-15'),
         'en-US'
       );
       expect(fileId).toBe('uploaded-file-id');
     });
 
-    it('should use default date and locale', async () => {
+    it('should use default locale', async () => {
       const fileId = await boxFS.uploadWithDateFolders('folder-123', '/path/to/file.pdf');
       expect(fileId).toBe('uploaded-file-id');
     });
@@ -202,7 +201,6 @@ describe('BoxFS', () => {
       const fileId = await boxFS.uploadWithDateFolders(
         'folder-123',
         '/path/to/file.pdf',
-        new Date('2024-03-15'),
         'ja-JP'
       );
       expect(fileId).toBe('uploaded-file-id');

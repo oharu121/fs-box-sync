@@ -1,4 +1,5 @@
 import Axon from 'axios-fluent';
+import { AxiosError } from 'axios';
 import fs from 'fs';
 import fsPromises from 'fs/promises';
 import path from 'path';
@@ -24,6 +25,8 @@ export class BoxAPI {
   private refreshToken: string = '';
   private accessToken: string = '';
   private tokenRefreshPromise: Promise<void> | null = null;
+  private storageLoadPromise: Promise<boolean> | null = null;
+  private isRetrying: boolean = false;
   private tokenProvider?: (callback: string) => Promise<string> | string;
   private clientId: string = '';
   private clientSecret: string = '';
@@ -40,15 +43,20 @@ export class BoxAPI {
     }
 
     // Auto-load from storage (async, but don't block constructor)
-    this.loadFromStorage().catch(() => {
-      // Silently fail - will load on first use if needed
-    });
+    this.storageLoadPromise = this.loadFromStorage().catch(() => false);
   }
 
   /**
    * Apply configuration
    */
   public applyConfig(config: BoxConfig): void {
+    if (config.accessToken) {
+      this.accessToken = config.accessToken;
+      // Set a far future expiry for manual access tokens
+      // User is responsible for knowing when it expires (~1 hour)
+      this.expiredAt = Date.now() + 365 * 24 * 60 * 60 * 1000; // 1 year (effectively never expires in our logic)
+    }
+
     if (config.tokenProvider) {
       this.tokenProvider = config.tokenProvider;
     }
@@ -198,7 +206,19 @@ export class BoxAPI {
    * Check and refresh token if needed
    */
   private async checkToken(): Promise<void> {
+    // If using access token only mode, skip credential check and refresh logic
+    if (this.accessToken && !this.refreshToken && !this.tokenProvider) {
+      // Access token only mode - user is responsible for token validity
+      return;
+    }
+
     this.ensureCredentials();
+
+    // Wait for storage to load first (if still loading)
+    if (this.storageLoadPromise) {
+      await this.storageLoadPromise;
+      this.storageLoadPromise = null;
+    }
 
     if (this.tokenRefreshPromise) {
       await this.tokenRefreshPromise;
@@ -297,102 +317,234 @@ export class BoxAPI {
         this.expiredAt = Date.now() + res.data.expires_in * 1000;
         this.refreshToken = res.data.refresh_token;
       } else {
-        console.error(`Failed to refresh access token: ${res.status} ${res.data}`);
-        throw new Error('Failed to refresh access token');
+        // Refresh token is invalid (401) or bad request (400)
+        if (res.status === 401 || res.status === 400) {
+          console.warn('Refresh token is invalid, falling back to provider');
+          this.refreshToken = ''; // Clear invalid token
+          await this.forgeRefreshToken();
+        } else {
+          console.error(`Failed to refresh access token: ${res.status} ${res.data}`);
+          throw new Error('Failed to refresh access token');
+        }
       }
-    } catch (error) {
+    } catch (error: unknown) {
+      // Check if it's an Axios error with 401/400 status
+      if (error instanceof AxiosError) {
+        const status = error.response?.status;
+        if (status === 401 || status === 400) {
+          console.warn('Refresh token is invalid (caught error), falling back to provider');
+          this.refreshToken = ''; // Clear invalid token
+          await this.forgeRefreshToken();
+          return;
+        }
+      }
       console.error('Error refreshing access token:', error);
       throw error;
     }
+  }
+
+  /**
+   * Invalidate current tokens and refresh them
+   * Called when we receive a 401 from the API despite having a token
+   */
+  private async invalidateAndRefresh(): Promise<void> {
+    console.info('Token invalidated by 401 response, refreshing...');
+
+    // Clear current access token
+    this.accessToken = '';
+    this.expiredAt = 0;
+
+    // Try to refresh using the refresh token
+    if (this.refreshToken) {
+      try {
+        await this.refreshAccessToken();
+        return;
+      } catch {
+        console.warn('Failed to refresh with refresh token, will try provider');
+        // If refresh fails, fall through to use provider
+      }
+    }
+
+    // If no refresh token or refresh failed, use provider
+    if (this.tokenProvider) {
+      await this.forgeRefreshToken();
+    } else {
+      throw new Error(
+        'Authentication failed and no token provider configured. ' +
+        'Cannot recover from 401 error.'
+      );
+    }
+  }
+
+  /**
+   * Wrapper for API requests with automatic 401 retry
+   * @param operation The API operation to execute
+   * @returns The result of the operation
+   */
+  private async withRetry<T>(operation: () => Promise<T>): Promise<T> {
+    try {
+      return await operation();
+    } catch (error: unknown) {
+      // Only retry on 401 and only once
+      if (error instanceof AxiosError && error.response?.status === 401 && !this.isRetrying) {
+        this.isRetrying = true;
+        try {
+          console.warn('Received 401, attempting to refresh token and retry...');
+          await this.invalidateAndRefresh();
+
+          // Retry the operation once
+          return await operation();
+        } finally {
+          this.isRetrying = false;
+        }
+      }
+
+      // For all other errors or if already retrying, throw with better message
+      throw this.enhanceError(error);
+    }
+  }
+
+  /**
+   * Enhance error messages to be more user-friendly
+   */
+  private enhanceError(error: unknown): Error {
+    // If it's an AxiosError, extract status and provide better messages
+    if (error instanceof AxiosError) {
+      const status = error.response?.status;
+      const data = error.response?.data;
+
+      if (status === 401) {
+        return new Error(
+          'Authentication failed. Please check your credentials or re-authenticate.'
+        );
+      } else if (status === 404) {
+        return new Error(
+          `Resource not found: ${data?.message || 'The requested item does not exist'}`
+        );
+      } else if (status === 409) {
+        return new Error(
+          `Conflict: ${data?.message || 'An item with this name already exists'}`
+        );
+      } else if (status === 403) {
+        return new Error(
+          `Permission denied: ${data?.message || 'You do not have access to this resource'}`
+        );
+      } else if (status && status >= 500) {
+        return new Error(
+          `Box server error (${status}): ${data?.message || 'Please try again later'}`
+        );
+      }
+    }
+
+    // If it's already an Error, return it
+    if (error instanceof Error) {
+      return error;
+    }
+
+    // Otherwise wrap it in an Error
+    return new Error(`Unknown error: ${String(error)}`);
   }
 
   // ========== WEBHOOK OPERATIONS ==========
 
   public async getAllWebhooks() {
     await this.checkToken();
-    const url = `https://api.box.com/2.0/webhooks`;
-    const res = await this.getAxon().bearer(this.accessToken).get(url);
-    return res.data;
+    return this.withRetry(async () => {
+      const url = `https://api.box.com/2.0/webhooks`;
+      const res = await this.getAxon().bearer(this.accessToken).get(url);
+      return res.data;
+    });
   }
 
   public async createWebhook(folderId: string, address: string) {
     await this.checkToken();
-    const url = `https://api.box.com/2.0/webhooks`;
-    const payload = {
-      target: { id: folderId, type: 'folder' },
-      address,
-      triggers: ['FILE.UPLOADED'],
-    };
-    const res = await this.getAxon().bearer(this.accessToken).post(url, payload);
-    return res.data;
+    return this.withRetry(async () => {
+      const url = `https://api.box.com/2.0/webhooks`;
+      const payload = {
+        target: { id: folderId, type: 'folder' },
+        address,
+        triggers: ['FILE.UPLOADED'],
+      };
+      const res = await this.getAxon().bearer(this.accessToken).post(url, payload);
+      return res.data;
+    });
   }
 
   public async deleteWebhook(webhookId: string) {
     await this.checkToken();
-    const url = `https://api.box.com/2.0/webhooks/${webhookId}`;
-    const res = await this.getAxon().bearer(this.accessToken).delete(url);
-    return res.data;
+    return this.withRetry(async () => {
+      const url = `https://api.box.com/2.0/webhooks/${webhookId}`;
+      const res = await this.getAxon().bearer(this.accessToken).delete(url);
+      return res.data;
+    });
   }
 
   // ========== FILE OPERATIONS ==========
 
   public async getFileInfo(fileId: string) {
     await this.checkToken();
-    const url = `https://api.box.com/2.0/files/${fileId}`;
-    const res = await this.getAxon().bearer(this.accessToken).get(url);
-    return res.data;
+    return this.withRetry(async () => {
+      const url = `https://api.box.com/2.0/files/${fileId}`;
+      const res = await this.getAxon().bearer(this.accessToken).get(url);
+      return res.data;
+    });
   }
 
   public async getFileContent(fileId: string): Promise<string | null> {
     await this.checkToken();
-    const url = `https://api.box.com/2.0/files/${fileId}/content`;
-
-    try {
+    return this.withRetry(async () => {
+      const url = `https://api.box.com/2.0/files/${fileId}/content`;
       const res = await this.getAxon().bearer(this.accessToken).responseType('arraybuffer').get(url);
+
       if (res.status === 200) {
         return Buffer.from(res.data).toString();
       } else {
-        console.error(`Failed to get file content for ID ${fileId}. Status: ${res.status}`);
-        return null;
+        throw new Error(`Failed to get file content for ID ${fileId}. Status: ${res.status}`);
       }
-    } catch (error) {
-      console.error(`Error fetching file content for ID ${fileId}:`, error);
-      return null;
-    }
+    });
   }
 
   public async downloadFile(fileId: string, destPath: string) {
     await this.checkToken();
-    const url = `https://api.box.com/2.0/files/${fileId}/content`;
-    const res = await this.getAxon().bearer(this.accessToken).responseType('stream').get(url);
+    return this.withRetry(async () => {
+      const url = `https://api.box.com/2.0/files/${fileId}/content`;
+      const res = await this.getAxon().bearer(this.accessToken).responseType('stream').get(url);
 
-    if (res.status === 200) {
-      const writer = fs.createWriteStream(destPath);
-      res.data.pipe(writer);
+      if (res.status === 200) {
+        const writer = fs.createWriteStream(destPath);
+        res.data.pipe(writer);
 
-      return new Promise<void>((resolve, reject) => {
-        writer.on('finish', () => resolve());
-        writer.on('error', (err) => reject(err));
-      });
-    }
+        return new Promise<void>((resolve, reject) => {
+          writer.on('finish', () => resolve());
+          writer.on('error', (err) => reject(err));
+        });
+      } else {
+        throw new Error(`Failed to download file. Status: ${res.status}`);
+      }
+    });
   }
 
   public async deleteFile(fileId: string) {
     await this.checkToken();
-    const url = `https://api.box.com/2.0/files/${fileId}`;
-    const res = await this.getAxon().bearer(this.accessToken).delete(url);
-    return res.data;
+    return this.withRetry(async () => {
+      const url = `https://api.box.com/2.0/files/${fileId}`;
+      const res = await this.getAxon().bearer(this.accessToken).delete(url);
+      return res.data;
+    });
   }
 
   public async moveFile(fileId: string, toFolderId: string) {
     await this.checkToken();
-    const url = `https://api.box.com/2.0/files/${fileId}`;
-    const payload = { parent: { id: toFolderId } };
-    const res = await this.getAxon().bearer(this.accessToken).put(url, payload);
-    return res.data;
+    return this.withRetry(async () => {
+      const url = `https://api.box.com/2.0/files/${fileId}`;
+      const payload = { parent: { id: toFolderId } };
+      const res = await this.getAxon().bearer(this.accessToken).put(url, payload);
+      return res.data;
+    });
   }
 
   public async uploadFile(folderId: string, filePath: string): Promise<string> {
+    await this.checkToken();
     const fileSize = fs.statSync(filePath).size;
     const FILE_SIZE_THRESHOLD = 20 * 1024 * 1024; // 20MB
 
@@ -405,22 +557,22 @@ export class BoxAPI {
   }
 
   private async normalUpload(folderId: string, filePath: string): Promise<string> {
-    await this.checkToken();
+    return this.withRetry(async () => {
+      const url = `https://upload.box.com/api/2.0/files/content`;
+      const name = path.basename(filePath);
+      const stream = fs.createReadStream(filePath);
+      const formData = new FormData();
+      const attributes = {
+        name: name,
+        parent: { id: folderId },
+      };
 
-    const url = `https://upload.box.com/api/2.0/files/content`;
-    const name = path.basename(filePath);
-    const stream = fs.createReadStream(filePath);
-    const formData = new FormData();
-    const attributes = {
-      name: name,
-      parent: { id: folderId },
-    };
+      formData.append('attributes', JSON.stringify(attributes));
+      formData.append('file', stream, name);
 
-    formData.append('attributes', JSON.stringify(attributes));
-    formData.append('file', stream, name);
-
-    const res = await this.getAxon().bearer(this.accessToken).post(url, formData);
-    return res.data.entries[0].id || '';
+      const res = await this.getAxon().bearer(this.accessToken).post(url, formData);
+      return res.data.entries[0].id || '';
+    });
   }
 
   private async chunkedUpload(folderId: string, filePath: string, fileSize: number) {
@@ -437,22 +589,22 @@ export class BoxAPI {
   }
 
   private async createUploadSession(folderId: string, filePath: string, fileSize: number) {
-    await this.checkToken();
+    return this.withRetry(async () => {
+      const url = `https://upload.box.com/api/2.0/files/upload_sessions`;
+      const name = path.basename(filePath);
+      const payload = {
+        folder_id: folderId,
+        file_name: name,
+        file_size: fileSize,
+      };
 
-    const url = `https://upload.box.com/api/2.0/files/upload_sessions`;
-    const name = path.basename(filePath);
-    const payload = {
-      folder_id: folderId,
-      file_name: name,
-      file_size: fileSize,
-    };
+      const res = await this.getAxon().bearer(this.accessToken).post(url, payload);
+      const sessionId = res.data.id || '';
+      const uploadUrl = res.data.session_endpoints.upload_part;
+      const partSize = res.data.part_size;
 
-    const res = await this.getAxon().bearer(this.accessToken).post(url, payload);
-    const sessionId = res.data.id || '';
-    const uploadUrl = res.data.session_endpoints.upload_part;
-    const partSize = res.data.part_size;
-
-    return { sessionId, uploadUrl, partSize };
+      return { sessionId, uploadUrl, partSize };
+    });
   }
 
   private async uploadChunks(
@@ -507,10 +659,12 @@ export class BoxAPI {
   }
 
   private async commitSession(sessionId: string, parts: UploadPart[], fileDigest: string) {
-    const url = `https://upload.box.com/api/2.0/files/upload_sessions/${sessionId}/commit`;
-    const payload = { parts };
-    const res = await this.getAxon().bearer(this.accessToken).digest(fileDigest).post(url, payload);
-    return res.data.entries[0].id;
+    return this.withRetry(async () => {
+      const url = `https://upload.box.com/api/2.0/files/upload_sessions/${sessionId}/commit`;
+      const payload = { parts };
+      const res = await this.getAxon().bearer(this.accessToken).digest(fileDigest).post(url, payload);
+      return res.data.entries[0].id;
+    });
   }
 
   private calculateSHA1(buffer: Buffer): string {
@@ -523,83 +677,95 @@ export class BoxAPI {
 
   public async getFolderInfo(folderId: string) {
     await this.checkToken();
-    const url = `https://api.box.com/2.0/folders/${folderId}`;
-    const res = await this.getAxon().bearer(this.accessToken).get(url);
-    return res.data;
+    return this.withRetry(async () => {
+      const url = `https://api.box.com/2.0/folders/${folderId}`;
+      const res = await this.getAxon().bearer(this.accessToken).get(url);
+      return res.data;
+    });
   }
 
   public async listFolderItems(folderId: string) {
     await this.checkToken();
-    const url = `https://api.box.com/2.0/folders/${folderId}/items`;
-    const res = await this.getAxon().bearer(this.accessToken).get(url);
-    return res.data;
+    return this.withRetry(async () => {
+      const url = `https://api.box.com/2.0/folders/${folderId}/items`;
+      const res = await this.getAxon().bearer(this.accessToken).get(url);
+      return res.data;
+    });
   }
 
   public async createFolder(parentFolderId: string, name: string) {
     await this.checkToken();
-    const url = `https://api.box.com/2.0/folders`;
-    const payload = {
-      name: name,
-      parent: { id: parentFolderId },
-    };
-    const res = await this.getAxon().bearer(this.accessToken).post(url, payload);
-    return res.data;
+    return this.withRetry(async () => {
+      const url = `https://api.box.com/2.0/folders`;
+      const payload = {
+        name: name,
+        parent: { id: parentFolderId },
+      };
+      const res = await this.getAxon().bearer(this.accessToken).post(url, payload);
+      return res.data;
+    });
   }
 
   public async searchInFolder(folderId: string, query: string, type?: string) {
     await this.checkToken();
-    const url = `https://api.box.com/2.0/search`;
-    const params: Record<string, string | number> = {
-      query: query,
-      content_types: 'name',
-      folder_ids: folderId,
-      limit: 100,
-    };
+    return this.withRetry(async () => {
+      const url = `https://api.box.com/2.0/search`;
+      const params: Record<string, string | number> = {
+        query: query,
+        content_types: 'name',
+        folder_ids: folderId,
+        limit: 100,
+      };
 
-    if (type) {
-      params.type = type;
-    }
+      if (type) {
+        params.type = type;
+      }
 
-    const res = await this.getAxon().bearer(this.accessToken).params(params).get(url);
-    return res.data.entries;
+      const res = await this.getAxon().bearer(this.accessToken).params(params).get(url);
+      return res.data.entries;
+    });
   }
 
   // ========== SHARED LINKS ==========
 
   public async getSharedLinkFileId(linkId: string) {
     await this.checkToken();
-    const url = `https://api.box.com/2.0/shared_items`;
-    const res = await this.getAxon()
-      .bearer(this.accessToken)
-      .setHeader('boxapi', `shared_link=https://app.box.com/s/${linkId}`)
-      .get(url);
-    return res.data.id;
+    return this.withRetry(async () => {
+      const url = `https://api.box.com/2.0/shared_items`;
+      const res = await this.getAxon()
+        .bearer(this.accessToken)
+        .setHeader('boxapi', `shared_link=https://app.box.com/s/${linkId}`)
+        .get(url);
+      return res.data.id;
+    });
   }
 
   public async downloadFromSharedLink(linkId: string, destPath: string) {
     await this.checkToken();
-    const id = await this.getSharedLinkFileId(linkId);
-    const url = `https://api.box.com/2.0/files/${id}/content`;
-    const res = await this.getAxon()
-      .bearer(this.accessToken)
-      .setHeader('boxapi', `shared_link=https://app.box.com/s/${linkId}`)
-      .responseType('stream')
-      .get(url);
+    return this.withRetry(async () => {
+      const id = await this.getSharedLinkFileId(linkId);
+      const url = `https://api.box.com/2.0/files/${id}/content`;
+      const res = await this.getAxon()
+        .bearer(this.accessToken)
+        .setHeader('boxapi', `shared_link=https://app.box.com/s/${linkId}`)
+        .responseType('stream')
+        .get(url);
 
-    if (res.status === 200) {
-      const writer = fs.createWriteStream(destPath);
+      if (res.status === 200) {
+        const writer = fs.createWriteStream(destPath);
 
-      return new Promise<void>((resolve, reject) => {
-        res.data.pipe(writer);
-        writer.on('finish', () => resolve());
-        writer.on('error', (err: Error) => reject(err));
-        res.data.on('error', (err: Error) => {
-          writer.destroy();
-          reject(err);
+        return new Promise<void>((resolve, reject) => {
+          res.data.pipe(writer);
+          writer.on('finish', () => resolve());
+          writer.on('error', (err: Error) => reject(err));
+          res.data.on('error', (err: Error) => {
+            writer.destroy();
+            reject(err);
+          });
         });
-      });
-    } else {
-      throw new Error(`Failed to download file. Status: ${res.status}`);
-    }
+      } else {
+        throw new Error(`Failed to download file. Status: ${res.status}`);
+      }
+    });
   }
 }

@@ -3,6 +3,10 @@
  */
 export interface BoxConfig {
   // === Authentication ===
+  // Access token for quick testing (expires in ~1 hour, no auto-refresh)
+  // Get from: Box Developer Console → My Apps → Your App → Configuration → Developer Token
+  accessToken?: string;
+
   // Token provider function (e.g., Playwright.getBoxCode)
   // Will be called when refresh token is needed initially
   tokenProvider?: (callback: string) => Promise<string> | string;

@@ -172,9 +172,11 @@ export class BoxFS {
 
   /**
    * Upload file with automatic date-based folder structure
-   * @param folderId - Base folder ID
+   * Creates year/month folders and uploads the file
+   *
+   * @param folderId - Base folder ID where date folders will be created
    * @param filePath - Local file path to upload
-   * @param date - Date for folder structure (default: now)
+   * @param locale - Locale for date formatting (default: 'en-US')
    * @returns Uploaded file ID
    *
    * @example
@@ -182,14 +184,14 @@ export class BoxFS {
    * await boxFS.uploadWithDateFolders('123', './file.pdf')
    *
    * // With Japanese locale: folderId/2024年/3月/file.pdf
-   * await boxFS.uploadWithDateFolders('123', './file.pdf', new Date(), 'ja-JP')
+   * await boxFS.uploadWithDateFolders('123', './file.pdf', 'ja-JP')
    */
   public async uploadWithDateFolders(
     folderId: string,
     filePath: string,
-    date: Date = new Date(),
     locale: string = 'en-US'
   ): Promise<string> {
+    const date = new Date();
     const { year, month } = formatDateFolders(date, locale);
 
     // Create year folder
