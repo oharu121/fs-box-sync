@@ -144,11 +144,7 @@ export class BoxAPI {
       const dir = path.dirname(this.storagePath);
       await fsPromises.mkdir(dir, { recursive: true });
 
-      await fsPromises.writeFile(
-        this.storagePath,
-        JSON.stringify(credentials, null, 2),
-        'utf-8'
-      );
+      await fsPromises.writeFile(this.storagePath, JSON.stringify(credentials, null, 2), 'utf-8');
 
       console.info(`Credentials saved to ${this.storagePath}`);
     } catch (error) {
@@ -371,7 +367,7 @@ export class BoxAPI {
     } else {
       throw new Error(
         'Authentication failed and no token provider configured. ' +
-        'Cannot recover from 401 error.'
+          'Cannot recover from 401 error.'
       );
     }
   }
@@ -422,9 +418,7 @@ export class BoxAPI {
           `Resource not found: ${data?.message || 'The requested item does not exist'}`
         );
       } else if (status === 409) {
-        return new Error(
-          `Conflict: ${data?.message || 'An item with this name already exists'}`
-        );
+        return new Error(`Conflict: ${data?.message || 'An item with this name already exists'}`);
       } else if (status === 403) {
         return new Error(
           `Permission denied: ${data?.message || 'You do not have access to this resource'}`
@@ -494,7 +488,10 @@ export class BoxAPI {
     await this.checkToken();
     return this.withRetry(async () => {
       const url = `https://api.box.com/2.0/files/${fileId}/content`;
-      const res = await this.getAxon().bearer(this.accessToken).responseType('arraybuffer').get(url);
+      const res = await this.getAxon()
+        .bearer(this.accessToken)
+        .responseType('arraybuffer')
+        .get(url);
 
       if (res.status === 200) {
         return Buffer.from(res.data).toString();
@@ -662,7 +659,10 @@ export class BoxAPI {
     return this.withRetry(async () => {
       const url = `https://upload.box.com/api/2.0/files/upload_sessions/${sessionId}/commit`;
       const payload = { parts };
-      const res = await this.getAxon().bearer(this.accessToken).digest(fileDigest).post(url, payload);
+      const res = await this.getAxon()
+        .bearer(this.accessToken)
+        .digest(fileDigest)
+        .post(url, payload);
       return res.data.entries[0].id;
     });
   }
@@ -688,7 +688,8 @@ export class BoxAPI {
     await this.checkToken();
     return this.withRetry(async () => {
       const url = `https://api.box.com/2.0/folders/${folderId}/items`;
-      const res = await this.getAxon().bearer(this.accessToken).get(url);
+      const params = { direction: 'DESC' };
+      const res = await this.getAxon().bearer(this.accessToken).params(params).get(url);
       return res.data;
     });
   }
