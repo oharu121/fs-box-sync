@@ -34,6 +34,7 @@ export class BoxAPI {
   private storagePath: string;
   public domain: string = 'app.box.com';
   private allowInsecure: boolean = false;
+  public locale: string = 'en-US';
 
   constructor(config?: BoxConfig) {
     this.storagePath = this.getDefaultStoragePath();
@@ -83,6 +84,10 @@ export class BoxAPI {
 
     if (config.allowInsecure !== undefined) {
       this.allowInsecure = config.allowInsecure;
+    }
+
+    if (config.locale) {
+      this.locale = config.locale;
     }
 
     this.updateStoragePath();

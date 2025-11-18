@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2]
+
+### Added
+
+- **Global Locale Configuration**: Configure date formatting globally via `BoxConfig`
+  - New `locale` option in `BoxConfig` (default: `'en-US'`)
+  - Supports `'en-US'`, `'ja-JP'`, `'zh-CN'`, and other locales
+  - Automatically applied to all date-based operations
+  - Example: `box.configure({ locale: 'ja-JP' })`
+
+### Changed
+
+- **`formatDateFolders()` now uses dayjs for date formatting**
+  - Replaced manual date manipulation with dayjs library
+  - Cleaner, more maintainable code
+  - Reduced function complexity from 43 to 24 lines
+  - Required parameters: `date` and `locale` (no defaults)
+
+- **`uploadWithYearMonthFolders()` signature simplified**
+  - Before: `uploadWithYearMonthFolders(folderId, filePath, locale?)`
+  - After: `uploadWithYearMonthFolders(folderId, filePath)`
+  - Now uses globally configured locale from `BoxConfig`
+  - Breaking change: locale parameter removed
+
+### Dependencies
+
+- Added `dayjs` (^1.11.19) for locale-aware date formatting
+
 ## [1.2.0]
 
 ### Breaking Changes

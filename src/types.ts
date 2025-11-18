@@ -47,6 +47,11 @@ export interface BoxConfig {
   // WARNING: Only use in development/testing. This disables SSL certificate verification.
   // Default: false
   allowInsecure?: boolean;
+
+  // === Localization Configuration ===
+  // Locale for date formatting (e.g., 'en-US', 'ja-JP', 'zh-CN')
+  // Default: 'en-US'
+  locale?: string;
 }
 
 /**

@@ -198,26 +198,25 @@ export class BoxFS {
   /**
    * Upload file with automatic date-based folder structure
    * Creates year/month folders and uploads the file
+   * Uses the global locale configured in BoxConfig
    *
    * @param folderId - Base folder ID where date folders will be created
    * @param filePath - Local file path to upload
-   * @param locale - Locale for date formatting (default: 'en-US')
    * @returns Uploaded file ID
    *
    * @example
-   * // Uploads to: folderId/2024/March/file.pdf
-   * await boxFS.uploadWithYearMonthFolders('123', './file.pdf')
+   * // Configure locale first
+   * box.configure({ locale: 'ja-JP' });
    *
-   * // With Japanese locale: folderId/2024年/3月/file.pdf
-   * await boxFS.uploadWithYearMonthFolders('123', './file.pdf', 'ja-JP')
+   * // Uploads to: folderId/2024年/3月/file.pdf
+   * await boxFS.uploadWithYearMonthFolders('123', './file.pdf')
    */
   public async uploadWithYearMonthFolders(
     folderId: string,
-    filePath: string,
-    locale: string = 'en-US'
+    filePath: string
   ): Promise<string> {
     const date = new Date();
-    const { year, month } = formatDateFolders(date, locale);
+    const { year, month } = formatDateFolders(date, this.api.locale);
 
     // Create year folder
     const yearFolderId = await this.createFolderIfNotExists(folderId, year);

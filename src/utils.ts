@@ -9,7 +9,7 @@ import dayjs from 'dayjs';
  * Format date folder names based on locale
  *
  * @param date - Date to format
- * @param locale - Locale (e.g., 'en-US', 'ja-JP')
+ * @param locale - Locale (e.g., 'en-US', 'ja-JP', 'zh-CN')
  * @param yearFormat - Custom year format (dayjs format string)
  * @param monthFormat - Custom month format (dayjs format string)
  * @returns Object with year and month folder names
@@ -28,11 +28,11 @@ import dayjs from 'dayjs';
  * // => { year: '2024', month: '03' }
  */
 export function formatDateFolders(
-  date: Date = new Date(),
-  locale: string = 'en-US',
+  date: Date,
+  locale: string,
   yearFormat?: string,
   monthFormat?: string
-): { year: string; month: string } {
+): { year: string; month: string} {
   const d = dayjs(date);
 
   // If custom formats provided, use them

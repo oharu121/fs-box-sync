@@ -2,9 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { formatDateFolders, getBoxOfficeOnlineUrl, sanitizeFilename, getFileExtension, isOfficeFile } from './utils';
 
 describe('formatDateFolders', () => {
-  it('should format date with default locale (en-US)', () => {
+  it('should format date with en-US locale', () => {
     const date = new Date('2024-03-15');
-    const result = formatDateFolders(date);
+    const result = formatDateFolders(date, 'en-US');
     expect(result.year).toBe('2024');
     expect(result.month).toBe('March');
   });
@@ -16,17 +16,18 @@ describe('formatDateFolders', () => {
     expect(result.month).toBe('3月');
   });
 
+  it('should format date with Chinese locale', () => {
+    const date = new Date('2024-03-15');
+    const result = formatDateFolders(date, 'zh-CN');
+    expect(result.year).toBe('2024年');
+    expect(result.month).toBe('3月');
+  });
+
   it('should format date with custom year and month format', () => {
     const date = new Date('2024-03-15');
     const result = formatDateFolders(date, 'en-US', 'YYYY', 'MM');
     expect(result.year).toBe('2024');
     expect(result.month).toBe('03');
-  });
-
-  it('should use current date if no date provided', () => {
-    const result = formatDateFolders();
-    expect(result.year).toMatch(/^\d{4}$/);
-    expect(result.month).toBeTruthy();
   });
 });
 

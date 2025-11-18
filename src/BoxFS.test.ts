@@ -25,6 +25,7 @@ vi.mock('./BoxAPI', () => {
   return {
     BoxAPI: class MockBoxAPI {
       domain = 'app.box.com';
+      locale = 'en-US';
       listFolderItems = vi.fn(() =>
         Promise.resolve({
           entries: [
@@ -112,13 +113,8 @@ describe('BoxFS', () => {
   });
 
   describe('readDir', () => {
-    it('should read directory from API without sync', async () => {
-      const files = await boxFS.readDir('folder-123', false);
-      expect(files).toEqual(['file1.txt', 'file2.pdf']);
-    });
-
-    it('should read directory from local filesystem with sync', async () => {
-      const files = await boxFS.readDir('folder-123', true);
+    it('should read directory from local filesystem', async () => {
+      const files = await boxFS.readDir('folder-123');
       expect(files).toEqual(['file1.txt', 'file2.pdf']);
     });
   });
@@ -134,13 +130,8 @@ describe('BoxFS', () => {
   });
 
   describe('readFile', () => {
-    it('should read file from API without sync', async () => {
-      const content = await boxFS.readFile('file-123', false);
-      expect(content).toBe('file content');
-    });
-
-    it('should read file from local filesystem with sync', async () => {
-      const content = await boxFS.readFile('file-123', true);
+    it('should read file from local filesystem', async () => {
+      const content = await boxFS.readFile('file-123');
       expect(content).toBe('file content');
     });
   });
@@ -198,23 +189,13 @@ describe('BoxFS', () => {
     it('should upload file to date-based folder structure', async () => {
       const fileId = await boxFS.uploadWithYearMonthFolders(
         'folder-123',
-        '/path/to/file.pdf',
-        'en-US'
+        '/path/to/file.pdf'
       );
       expect(fileId).toBe('uploaded-file-id');
     });
 
-    it('should use default locale', async () => {
+    it('should use configured locale', async () => {
       const fileId = await boxFS.uploadWithYearMonthFolders('folder-123', '/path/to/file.pdf');
-      expect(fileId).toBe('uploaded-file-id');
-    });
-
-    it('should work with Japanese locale', async () => {
-      const fileId = await boxFS.uploadWithYearMonthFolders(
-        'folder-123',
-        '/path/to/file.pdf',
-        'ja-JP'
-      );
       expect(fileId).toBe('uploaded-file-id');
     });
   });
