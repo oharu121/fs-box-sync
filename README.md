@@ -29,7 +29,7 @@ Toolkit for Box REST API with automatic token management, OAuth automation suppo
 │   BoxFS (High-level API)            │  ← Recommended
 │  - readDir(id, ensureSync)          │
 │  - readFile(id, ensureSync)         │
-│  - uploadWithYearMonthFolders()          │
+│  - uploadWithYearMonthFolders()     │
 └──────────────┬──────────────────────┘
                │
 ┌──────────────▼──────────────────────┐

@@ -1,5 +1,4 @@
-import Axon from 'axios-fluent';
-import { AxiosError } from 'axios';
+import Axon, { AxonError } from 'axios-fluent';
 import fs from 'fs';
 import fsPromises from 'fs/promises';
 import path from 'path';
@@ -325,9 +324,9 @@ export class BoxAPI {
         }
       }
     } catch (error: unknown) {
-      // Check if it's an Axios error with 401/400 status
-      if (error instanceof AxiosError) {
-        const status = error.response?.status;
+      // Check if it's an Axon error with 401/400 status
+      if (error instanceof AxonError) {
+        const status = error.status;
         if (status === 401 || status === 400) {
           console.warn('Refresh token is invalid (caught error), falling back to provider');
           this.refreshToken = ''; // Clear invalid token
@@ -383,7 +382,7 @@ export class BoxAPI {
       return await operation();
     } catch (error: unknown) {
       // Only retry on 401 and only once
-      if (error instanceof AxiosError && error.response?.status === 401 && !this.isRetrying) {
+      if (error instanceof AxonError && error.status === 401 && !this.isRetrying) {
         this.isRetrying = true;
         try {
           console.warn('Received 401, attempting to refresh token and retry...');
@@ -405,10 +404,10 @@ export class BoxAPI {
    * Enhance error messages to be more user-friendly
    */
   private enhanceError(error: unknown): Error {
-    // If it's an AxiosError, extract status and provide better messages
-    if (error instanceof AxiosError) {
-      const status = error.response?.status;
-      const data = error.response?.data;
+    // If it's an AxonError, extract status and provide better messages
+    if (error instanceof AxonError) {
+      const status = error.status;
+      const data = error.responseData;
 
       if (status === 401) {
         return new Error(
