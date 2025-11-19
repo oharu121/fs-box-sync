@@ -273,6 +273,18 @@ export class BoxFS {
   }
 
   /**
+   * Upload file to Box and remove it locally
+   * @param folderId - Target folder ID in Box
+   * @param filePath - Local file path to upload
+   * @returns Uploaded file ID
+   */
+  public async uploadFileThenRemove(folderId: string, filePath: string): Promise<string> {
+    const fileId = await this.api.uploadFile(folderId, filePath);
+    await fs.unlink(filePath);
+    return fileId;
+  }
+
+  /**
    * Download file by ID
    */
   public async downloadFile(fileId: string, destPath: string): Promise<void> {
@@ -312,6 +324,18 @@ export class BoxFS {
 
   public async deleteWebhook(webhookId: string) {
     return await this.api.deleteWebhook(webhookId);
+  }
+
+  /**
+   * Delete all webhooks
+   * @returns Number of webhooks deleted
+   */
+  public async deleteAllWebhooks(): Promise<number> {
+    const webhooks = await this.api.getAllWebhooks();
+    for (const webhook of webhooks.entries) {
+      await this.api.deleteWebhook(webhook.id);
+    }
+    return webhooks.entries.length;
   }
 
   // ========== SHARED LINKS ==========
