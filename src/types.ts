@@ -52,6 +52,13 @@ export interface BoxConfig {
   // Locale for date formatting (e.g., 'en-US', 'ja-JP', 'zh-CN')
   // Default: 'en-US'
   locale?: string;
+
+  // === Retry Configuration ===
+  // Maximum number of retries for network errors (default: 3)
+  maxRetries?: number;
+
+  // Initial delay between retries in ms (default: 1000)
+  retryDelay?: number;
 }
 
 /**

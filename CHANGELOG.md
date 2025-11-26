@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0]
+
+### Added
+
+- **Network Error Retry with Exponential Backoff**
+  - Automatically retries on transient network errors: `socket hang up`, `ECONNRESET`, `ETIMEDOUT`, `ECONNREFUSED`, `ENOTFOUND`
+  - Default: 3 retries with exponential backoff (1s, 2s, 4s delays)
+  - New `BoxConfig` options: `maxRetries` (default: 3) and `retryDelay` (default: 1000ms)
+  - Console warnings show retry progress: `Network error (attempt 1/4), retrying in 1000ms...`
+
 ## [1.3.1]
 
 ### Fixed

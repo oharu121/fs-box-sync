@@ -34,6 +34,8 @@ export class BoxAPI {
   public domain: string = 'app.box.com';
   private allowInsecure: boolean = false;
   public locale: string = 'en-US';
+  private maxRetries: number = 3;
+  private retryDelay: number = 1000;
 
   constructor(config?: BoxConfig) {
     this.storagePath = this.getDefaultStoragePath();
@@ -87,6 +89,14 @@ export class BoxAPI {
 
     if (config.locale) {
       this.locale = config.locale;
+    }
+
+    if (config.maxRetries !== undefined) {
+      this.maxRetries = config.maxRetries;
+    }
+
+    if (config.retryDelay !== undefined) {
+      this.retryDelay = config.retryDelay;
     }
 
     this.updateStoragePath();
@@ -373,31 +383,72 @@ export class BoxAPI {
   }
 
   /**
-   * Wrapper for API requests with automatic 401 retry
+   * Check if an error is a transient network error that should be retried
+   */
+  private isNetworkError(error: unknown): boolean {
+    if (error instanceof Error) {
+      const message = error.message.toLowerCase();
+      return (
+        message.includes('socket hang up') ||
+        message.includes('econnreset') ||
+        message.includes('etimedout') ||
+        message.includes('econnrefused') ||
+        message.includes('enotfound') ||
+        message.includes('network')
+      );
+    }
+    return false;
+  }
+
+  /**
+   * Sleep for a specified duration
+   */
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Wrapper for API requests with automatic 401 retry and network error retry
    * @param operation The API operation to execute
    * @returns The result of the operation
    */
   private async withRetry<T>(operation: () => Promise<T>): Promise<T> {
-    try {
-      return await operation();
-    } catch (error: unknown) {
-      // Only retry on 401 and only once
-      if (error instanceof AxonError && error.status === 401 && !this.isRetrying) {
-        this.isRetrying = true;
-        try {
-          console.warn('Received 401, attempting to refresh token and retry...');
-          await this.invalidateAndRefresh();
+    let lastError: unknown;
 
-          // Retry the operation once
-          return await operation();
-        } finally {
-          this.isRetrying = false;
+    for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
+      try {
+        return await operation();
+      } catch (error: unknown) {
+        lastError = error;
+
+        // Handle 401 errors (token refresh)
+        if (error instanceof AxonError && error.status === 401 && !this.isRetrying) {
+          this.isRetrying = true;
+          try {
+            console.warn('Received 401, attempting to refresh token and retry...');
+            await this.invalidateAndRefresh();
+            return await operation();
+          } finally {
+            this.isRetrying = false;
+          }
         }
-      }
 
-      // For all other errors or if already retrying, throw with better message
-      throw this.enhanceError(error);
+        // Handle network errors with exponential backoff
+        if (this.isNetworkError(error) && attempt < this.maxRetries) {
+          const delay = this.retryDelay * Math.pow(2, attempt);
+          console.warn(
+            `Network error (attempt ${attempt + 1}/${this.maxRetries + 1}), retrying in ${delay}ms...`
+          );
+          await this.sleep(delay);
+          continue;
+        }
+
+        // Non-retryable error or max retries exceeded
+        break;
+      }
     }
+
+    throw this.enhanceError(lastError);
   }
 
   /**

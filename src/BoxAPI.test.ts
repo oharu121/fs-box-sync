@@ -225,4 +225,24 @@ describe('BoxAPI', () => {
       expect(true).toBe(true);
     });
   });
+
+  describe('retry configuration', () => {
+    it('should accept maxRetries and retryDelay config', () => {
+      const retryConfig: BoxConfig = {
+        clientId: 'test-client-id',
+        clientSecret: 'test-client-secret',
+        refreshToken: 'test-refresh-token',
+        maxRetries: 5,
+        retryDelay: 2000,
+      };
+      const api = new BoxAPI(retryConfig);
+      expect(api).toBeInstanceOf(BoxAPI);
+    });
+
+    it('should use default retry values when not specified', () => {
+      const api = new BoxAPI(config);
+      expect(api).toBeInstanceOf(BoxAPI);
+      // Default values are 3 retries and 1000ms delay (internal)
+    });
+  });
 });
