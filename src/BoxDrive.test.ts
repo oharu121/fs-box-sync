@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BoxDrive } from './BoxDrive';
 import { BoxAPI } from './BoxAPI';
 import type { BoxConfig } from './types';
+import fs from 'fs';
 
 // Mock child_process
 vi.mock('child_process', () => ({
@@ -80,6 +81,79 @@ describe('BoxDrive', () => {
       const drive = new BoxDrive(boxAPI, configWithoutRoot);
       expect(drive.getBoxDriveRoot()).toContain('Box');
       Object.defineProperty(process, 'platform', { value: originalPlatform });
+    });
+
+    it('should NOT throw during construction when Box Drive is unavailable (lazy detection)', () => {
+      // Mock fs.existsSync to return false for Box Drive path
+      vi.spyOn(fs, 'existsSync').mockReturnValue(false);
+
+      const configWithoutRoot: BoxConfig = {
+        clientId: 'test-client-id',
+        clientSecret: 'test-client-secret',
+        refreshToken: 'test-refresh-token',
+      };
+
+      // Should NOT throw during construction - lazy detection
+      expect(() => new BoxDrive(boxAPI, configWithoutRoot)).not.toThrow();
+
+      // Restore mock
+      vi.spyOn(fs, 'existsSync').mockReturnValue(true);
+    });
+
+    it('should throw when getBoxDriveRoot is called but Box Drive is unavailable', () => {
+      vi.spyOn(fs, 'existsSync').mockReturnValue(false);
+
+      const configWithoutRoot: BoxConfig = {
+        clientId: 'test-client-id',
+        clientSecret: 'test-client-secret',
+        refreshToken: 'test-refresh-token',
+      };
+
+      const drive = new BoxDrive(boxAPI, configWithoutRoot);
+
+      // Should throw when trying to access Box Drive root
+      expect(() => drive.getBoxDriveRoot()).toThrow('Box Drive root not found');
+
+      vi.spyOn(fs, 'existsSync').mockReturnValue(true);
+    });
+  });
+
+  describe('isBoxDriveAvailable', () => {
+    it('should return true when Box Drive path is explicitly configured and exists', () => {
+      vi.spyOn(fs, 'existsSync').mockReturnValue(true);
+
+      expect(boxDrive.isBoxDriveAvailable()).toBe(true);
+    });
+
+    it('should return false when explicit path does not exist', () => {
+      vi.spyOn(fs, 'existsSync').mockReturnValue(false);
+
+      const customConfig: BoxConfig = {
+        clientId: 'test-client-id',
+        clientSecret: 'test-client-secret',
+        refreshToken: 'test-refresh-token',
+        boxDriveRoot: '/nonexistent/path',
+      };
+      const drive = new BoxDrive(boxAPI, customConfig);
+
+      expect(drive.isBoxDriveAvailable()).toBe(false);
+
+      vi.spyOn(fs, 'existsSync').mockReturnValue(true);
+    });
+
+    it('should return false when no config and auto-detection fails', () => {
+      vi.spyOn(fs, 'existsSync').mockReturnValue(false);
+
+      const configWithoutRoot: BoxConfig = {
+        clientId: 'test-client-id',
+        clientSecret: 'test-client-secret',
+        refreshToken: 'test-refresh-token',
+      };
+      const drive = new BoxDrive(boxAPI, configWithoutRoot);
+
+      expect(drive.isBoxDriveAvailable()).toBe(false);
+
+      vi.spyOn(fs, 'existsSync').mockReturnValue(true);
     });
   });
 

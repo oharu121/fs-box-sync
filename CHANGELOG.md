@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0]
+
+### Added
+
+- **`isBoxDriveAvailable()`** - Check Box Drive availability without throwing
+  - Returns `true` if Box Drive path is configured or can be auto-detected
+  - Use before calling operations that require local Box Drive access
+  - Enables graceful fallback to web-only operations
+
+### Changed
+
+- **Lazy Box Drive Path Detection**
+  - Box Drive path is now detected lazily, only when an operation requires it
+  - Allows web-only API operations to work even when Box Drive is not installed
+  - Previously: `new BoxFS()` would throw immediately if Box Drive path not found
+  - Now: Error only thrown when calling operations that require Box Drive (e.g., `readDir`, `readFile`, `getLocalPath`)
+
+### Web-Only Operations (work without Box Drive)
+
+The following operations now work without Box Drive installed:
+- `listFolderItems()`, `getFileContent()`, `writeFile()`
+- `uploadFile()`, `downloadFile()`, `deleteFile()`, `moveFile()`
+- `findByName()`, `search()`, `createFolderIfNotExists()`
+- `getFileInfo()`, `getFolderInfo()`
+- `getOfficeOnlineUrl()`, `getOfficeOnlineUrlByName()`
+- All webhook operations
+- `downloadFromSharedLink()`
+
+### Operations Requiring Box Drive
+
+These operations will throw if Box Drive is unavailable:
+- `readDir()`, `readFile()` - read from local synced files
+- `getLocalPath()`, `getLocalPathSynced()` - get local filesystem path
+- `existsAndSynced()`, `existsByNameAndSynced()` - check local sync status
+- `openLocally()`, `waitForSync()` - local file operations
+- `getBoxDriveRoot()`, `isBoxDriveRunning()` - Box Drive status
+
 ## [1.4.0]
 
 ### Added

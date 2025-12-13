@@ -11,10 +11,15 @@ const execAsync = promisify(exec);
 /**
  * Box Drive sync bridge
  * Handles path conversion and sync verification between Box Cloud and Box Drive
+ *
+ * Box Drive path detection is lazy - it only occurs when an operation
+ * that requires local filesystem access is called. This allows web-only
+ * API operations to work even when Box Drive is not installed.
  */
 export class BoxDrive {
   private api: BoxAPI;
-  private boxDriveRoot: string;
+  private _boxDriveRoot: string | undefined;
+  private _boxDriveRootDetected: boolean = false;
   private syncTimeout: number;
   private syncInterval: number;
 
@@ -22,7 +27,38 @@ export class BoxDrive {
     this.api = api;
     this.syncTimeout = config?.syncTimeout || 30000;
     this.syncInterval = config?.syncInterval || 1000;
-    this.boxDriveRoot = config?.boxDriveRoot || this.detectBoxDriveRoot();
+    this._boxDriveRoot = config?.boxDriveRoot;
+  }
+
+  /**
+   * Get Box Drive root with lazy detection
+   * Only detects/validates when actually needed for local operations
+   * @throws Error if Box Drive is not available and no explicit path configured
+   */
+  private getBoxDriveRootLazy(): string {
+    if (!this._boxDriveRootDetected) {
+      if (!this._boxDriveRoot) {
+        this._boxDriveRoot = this.detectBoxDriveRoot();
+      }
+      this._boxDriveRootDetected = true;
+    }
+    return this._boxDriveRoot!;
+  }
+
+  /**
+   * Check if Box Drive is available without throwing
+   * @returns true if Box Drive path is configured or can be detected
+   */
+  public isBoxDriveAvailable(): boolean {
+    if (this._boxDriveRoot) {
+      return fs.existsSync(this._boxDriveRoot);
+    }
+    try {
+      this.getBoxDriveRootLazy();
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -77,7 +113,7 @@ export class BoxDrive {
         return stdout.length > 0;
       } else {
         // Linux - just check if directory is accessible
-        return fs.existsSync(this.boxDriveRoot);
+        return this.isBoxDriveAvailable() && fs.existsSync(this.getBoxDriveRootLazy());
       }
     } catch {
       return false;
@@ -86,8 +122,10 @@ export class BoxDrive {
 
   /**
    * Convert Box file/folder ID to local Box Drive path
+   * @throws Error if Box Drive is not available
    */
   public async getLocalPath(id: string, type: 'file' | 'folder'): Promise<string> {
+    const boxDriveRoot = this.getBoxDriveRootLazy(); // Lazy detection here
     let pathParts: string[];
 
     if (type === 'file') {
@@ -100,7 +138,7 @@ export class BoxDrive {
       pathParts = [...parentPath.map((entry: { name: string }) => entry.name), folderInfo.name];
     }
 
-    return path.join(this.boxDriveRoot, ...pathParts);
+    return path.join(boxDriveRoot, ...pathParts);
   }
 
   /**
@@ -253,9 +291,10 @@ export class BoxDrive {
 
   /**
    * Get Box Drive root directory
+   * @throws Error if Box Drive is not available
    */
   public getBoxDriveRoot(): string {
-    return this.boxDriveRoot;
+    return this.getBoxDriveRootLazy();
   }
 
   /**

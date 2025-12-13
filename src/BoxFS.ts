@@ -354,6 +354,14 @@ export class BoxFS {
   }
 
   /**
+   * Check if Box Drive is available (path exists or can be detected)
+   * Use this to check before calling operations that require local Box Drive access
+   */
+  public isBoxDriveAvailable(): boolean {
+    return this.drive.isBoxDriveAvailable();
+  }
+
+  /**
    * Wait for sync with custom strategy
    */
   public async waitForSync(id: string, type: 'file' | 'folder', strategy?: SyncStrategy) {

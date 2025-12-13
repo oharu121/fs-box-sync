@@ -74,6 +74,7 @@ vi.mock('./BoxDrive', () => {
     BoxDrive: class MockBoxDrive {
       getBoxDriveRoot = vi.fn(() => '/mock/box/root');
       isBoxDriveRunning = vi.fn(() => Promise.resolve(true));
+      isBoxDriveAvailable = vi.fn(() => true);
       waitForSync = vi.fn(() =>
         Promise.resolve({
           synced: true,
@@ -297,6 +298,13 @@ describe('BoxFS', () => {
     it('should get Box Drive root path', () => {
       const root = boxFS.getBoxDriveRoot();
       expect(root).toBe('/mock/box/root');
+    });
+  });
+
+  describe('isBoxDriveAvailable', () => {
+    it('should check if Box Drive is available', () => {
+      const available = boxFS.isBoxDriveAvailable();
+      expect(available).toBe(true);
     });
   });
 
