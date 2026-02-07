@@ -12,7 +12,8 @@
       "Bash(npm run test:*)",
       "Bash(ls:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(npm version:*)"
     ],
     "deny": [
       "Bash(npm test:*)"
