@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.1] - 2026-02-07
+
+### Fixed
+
+- **Next.js Turbopack Compatibility**
+  - Fixed dynamic `require()` errors when using package with Next.js Turbopack
+  - Modified tsup configuration to externalize all dependencies instead of bundling them
+  - Eliminated `__require` polyfills that caused "Dynamic require of 'util' is not supported" errors
+  - Package now works correctly in strict ESM environments
+  - Reduced bundle size from 313 KB to 40 KB
+
 ## [1.5.0]
 
 ### Added

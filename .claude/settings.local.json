@@ -1,7 +1,22 @@
 {
   "permissions": {
-    "allow": ["Bash(npm run typecheck:*)", "Bash(npm run build:*)"],
-    "deny": ["Bash(npm test:*)"],
+    "allow": [
+      "Bash(npm run typecheck:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm pkg:*)",
+      "Bash(test:*)",
+      "Bash(gh api:*)",
+      "Bash(gh issue create:*)",
+      "Bash(git fetch:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run test:*)",
+      "Bash(ls:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ],
+    "deny": [
+      "Bash(npm test:*)"
+    ],
     "ask": []
   }
 }
