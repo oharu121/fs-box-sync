@@ -49,7 +49,7 @@ Toolkit for Box REST API with automatic token management, OAuth automation suppo
 ## Installation
 
 ```bash
-npm install fs-box-sync
+pnpm add fs-box-sync
 ```
 
 ## Usage Guide: Choose Your Integration Level
@@ -447,26 +447,26 @@ All pure Box REST API operations without Box Drive integration:
 ### Build
 
 ```bash
-npm run build
+pnpm build
 ```
 
 ### Test
 
 ```bash
-npm test
+pnpm test
 ```
 
 ### Lint
 
 ```bash
-npm run lint
-npm run format
+pnpm lint
+pnpm format
 ```
 
 ### Validate Package Exports
 
 ```bash
-npm run check:exports
+pnpm check:exports
 ```
 
 ## Contributing
